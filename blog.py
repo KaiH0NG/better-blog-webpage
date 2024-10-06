@@ -24,6 +24,9 @@ VIEWS_FILE = "views.json"
 # 设置管理员密码
 ADMIN_PASSWORD = "8zT@qR6#nP$1vW5!fL3x"
 
+# 定义固定的分类
+CATEGORIES = ["全部", "日常", "观察", "影评", "书评"]
+
 def set_custom_theme():
     st.markdown("""
     <style>
@@ -1040,17 +1043,17 @@ def main():
     if 'admin' not in st.session_state:
         admin_login()
 
+    # 分类标签
+    st.sidebar.title("分类标签")
+    selected_category = st.sidebar.radio("选择分类", CATEGORIES)
+
     # 文章列表
     st.header("最新文章")
     posts = load_data(POSTS_FILE, [])
     sorted_posts = sorted(posts, key=lambda x: x.get("upload_time", ""), reverse=True)
     
-    # 分类筛选
-    categories = ["全部"] + list(set(post["category"] for post in posts))
-    category_filter = st.selectbox("选择分类", categories)
-    
     for post in sorted_posts:
-        if category_filter == "全部" or post["category"] == category_filter:
+        if selected_category == "全部" or post["category"] == selected_category:
             with st.expander(f"{post['category']} | {post['title']}", expanded=False):
                 st.markdown(f"**分类：** {post['category']}")
                 st.markdown(f"**标题：** {post['title']}")
@@ -1089,7 +1092,7 @@ def main():
         if st.session_state.get('new_post'):
             st.header("新建文章")
             title = st.text_input("标题")
-            category = st.text_input("分类")
+            category = st.selectbox("分类", CATEGORIES[1:])  # 排除"全部"选项
             content = st.text_area("内容")
             image = st.file_uploader("上传图片", type=["png", "jpg", "jpeg"])
             if st.button("发布"):
@@ -1109,53 +1112,6 @@ def main():
                     st.experimental_rerun()
                 else:
                     st.error("请填写所有必填字段")
-
-def set_custom_theme():
-    st.markdown("""
-    <style>
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
-        background-color: #f7f7f7;
-        color: #333;
-    }
-
-    .stApp {
-        max-width: 100%;
-    }
-
-    .stSidebar {
-        background-color: #f0f0f0;
-        padding: 1rem;
-    }
-
-    .stButton > button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-
-    .stButton > button:hover {
-        background-color: #45a049;
-    }
-
-    /* 适配移动设备 */
-    @media (max-width: 768px) {
-        .stApp {
-            font-size: 14px;
-        }
-        .streamlit-expanderHeader {
-            font-size: 16px !important;
-        }
-        .stSidebar {
-            padding: 0.5rem;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
