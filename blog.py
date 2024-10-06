@@ -13,16 +13,17 @@ import pandas as pd
 import plotly.graph_objects as go # type: ignore
 import numpy as np
 import re
-
-# 设置管理员密码（请将此密码改为您自己的安全密码）
-ADMIN_PASSWORD = "your_secure_password_here"
+import html
+import streamlit.components.v1 as components
 
 # 文件路径
 POSTS_FILE = "posts.json"
 USERS_FILE = "users.json"
 VIEWS_FILE = "views.json"
 
-# 自定义主题
+# 设置管理员密码
+ADMIN_PASSWORD = "8zT@qR6#nP$1vW5!fL3x"
+
 def set_custom_theme():
     st.markdown("""
     <style>
@@ -33,7 +34,7 @@ def set_custom_theme():
     }
     
     .stApp {
-        background-color: #f5f5f7;
+        background-color: #ffffff;
     }
     
     .main .block-container {
@@ -44,17 +45,17 @@ def set_custom_theme():
     h1 {
         font-size: 2.5rem !important;
         font-weight: 700 !important;
-        color: #1d1d1f !important;
+        color: #2e7d32 !important;
     }
     
     h2 {
         font-size: 1.8rem !important;
         font-weight: 500 !important;
-        color: #1d1d1f !important;
+        color: #388e3c !important;
     }
     
     .stButton>button {
-        background-color: #0071e3;
+        background-color: #4caf50;
         color: white;
         border-radius: 20px;
         padding: 0.5rem 1rem;
@@ -65,11 +66,11 @@ def set_custom_theme():
     }
     
     .stButton>button:hover {
-        background-color: #0077ed;
+        background-color: #45a049;
     }
     
     .blog-post {
-        background-color: white;
+        background-color: #f1f8e9;
         border-radius: 18px;
         padding: 1.5rem;
         margin-bottom: 1.5rem;
@@ -79,7 +80,7 @@ def set_custom_theme():
     .blog-post h3 {
         font-size: 1.3rem !important;
         font-weight: 600 !important;
-        color: #1d1d1f !important;
+        color: #1b5e20 !important;
         margin-bottom: 0.5rem;
     }
     
@@ -90,26 +91,29 @@ def set_custom_theme():
 
     .category-tag {
         display: inline-block;
-        padding: 0.2rem 0.5rem;
-        background-color: #e8e8ed;
-        color: #1d1d1f;
+        padding: 0.3rem 0.7rem;
+        background-color: #4caf50;
+        color: white;
         border-radius: 20px;
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-bottom: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .delete-button {
-        color: #ff3b30;
+        color: #f44336;
         cursor: pointer;
         float: right;
     }
 
     .delete-button:hover {
-        color: #ff1a1a;
+        color: #d32f2f;
     }
 
     .comment {
-        background-color: #f5f5f7;
+        background-color: #e8f5e9;
         border-radius: 14px;
         padding: 0.5rem;
         margin-top: 0.5rem;
@@ -119,7 +123,7 @@ def set_custom_theme():
 
     .comment-author {
         font-weight: bold;
-        color: #1d1d1f;
+        color: #1b5e20;
         margin-right: 0.5rem;
     }
 
@@ -141,14 +145,14 @@ def set_custom_theme():
 
     .user-menu .stButton>button {
         background-color: transparent;
-        color: #1d1d1f;
-        border: 1px solid #1d1d1f;
+        color: #4caf50;
+        border: 1px solid #4caf50;
         padding: 0.3rem 0.7rem;
         font-size: 0.9rem;
     }
 
     .user-menu .stButton>button:hover {
-        background-color: #1d1d1f;
+        background-color: #4caf50;
         color: white;
     }
 
@@ -161,10 +165,511 @@ def set_custom_theme():
 
     .upload-time {
         font-size: 0.8rem;
-        color: #86868b;
+        color: #689f38;
         margin-bottom: 0.5rem;
     }
+
+    .stats-container {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 2rem;
+    }
+
+    .stat-item {
+        background-color: #e8f5e9;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2e7d32;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+        color: #388e3c;
+        margin-top: 0.5rem;
+    }
+
+    .sidebar .stRadio > div {
+        background-color: #f1f8e9;
+        border-radius: 10px;
+        padding: 0.5rem;
+    }
+
+    .sidebar .stRadio > div > label {
+        color: #2e7d32;
+    }
+
+    .blog-post-preview {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .post-header h3 {
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        color: #1b5e20 !important;
+        margin: 0;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .upload-time {
+        font-size: 0.8rem;
+        color: #689f38;
+        margin-bottom: 0.5rem;
+    }
+
+    .stButton>button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 12px;
+    }
+
+    .full-post {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .full-post h2 {
+        color: #1b5e20;
+        margin-bottom: 0.5rem;
+    }
+
+    .blog-post-preview {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .post-header h3 {
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        color: #1b5e20 !important;
+        margin: 0;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .upload-time {
+        font-size: 0.8rem;
+        color: #689f38;
+        margin-bottom: 0.5rem;
+    }
+
+    .full-post {
+        background-color: #ffffff;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .stButton>button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 12px;
+    }
+
+    /* 自定义 expander 样式 */
+    .streamlit-expanderHeader {
+        font-size: 0.9rem !important;
+        color: #4caf50 !important;
+    }
+
+    .streamlit-expanderContent {
+        background-color: #ffffff;
+        border-radius: 0 0 18px 18px;
+    }
+
+    .blog-post-preview {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .post-header h3 {
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        color: #1b5e20 !important;
+        margin: 0;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .upload-time {
+        font-size: 0.8rem;
+        color: #689f38;
+        margin-bottom: 0.5rem;
+    }
+
+    .post-content {
+        line-height: 1.6;
+    }
+
+    .read-more {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .read-more:hover {
+        text-decoration: underline;
+    }
+
+    .post-content {
+        line-height: 1.6;
+    }
+
+    .blog-post-preview {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .post-content {
+        line-height: 1.6;
+    }
+
+    .blog-post-preview {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .blog-post-preview {
+        background-color: #f1f8e9;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .post-header h3 {
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        color: #1b5e20 !important;
+        margin: 0;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .upload-time {
+        font-size: 0.8rem;
+        color: #689f38;
+        margin-bottom: 0.5rem;
+    }
+
+    .stExpander {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .streamlit-expanderHeader {
+        font-size: 1rem !important;
+        font-weight: bold !important;
+        color: #4caf50 !important;
+    }
+
+    .streamlit-expanderContent {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    .stButton > button {
+        width: 100%;
+        text-align: left;
+        background-color: #f1f8e9;
+        color: #1b5e20;
+        font-size: 1.2rem;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 18px;
+        margin-bottom: 0.5rem;
+        transition: background-color 0.3s;
+    }
+
+    .stButton > button:hover {
+        background-color: #c8e6c9;
+    }
+
+    .blog-post-full {
+        background-color: #ffffff;
+        border-radius: 18px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .upload-time {
+        font-size: 0.8rem;
+        color: #689f38;
+        margin-bottom: 0.5rem;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        color: white;
+        font-weight: bold;
+        border-radius: 20px;
+        text-align: center;
+        width: 100%;
+    }
+
+    .category-tag.影评 {
+        background-color: #FF6B6B;
+    }
+
+    .category-tag.日常 {
+        background-color: #4ECDC4;
+    }
+
+    .category-tag.观察 {
+        background-color: #45B7D1;
+    }
+
+    .category-selector {
+        margin-bottom: 20px;
+    }
+
+    .category-selector p {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .category-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .category-buttons button {
+        background-color: transparent !important;
+        color: #333 !important;
+        border: 1px solid #ddd !important;
+        padding: 5px 15px !important;
+        font-size: 0.9rem !important;
+        border-radius: 20px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .category-buttons button:hover {
+        background-color: #f0f0f0 !important;
+        border-color: #bbb !important;
+    }
+
+    .category-buttons button:focus {
+        box-shadow: none !important;
+        border-color: #999 !important;
+    }
+
+    /* 当分类被选中时的样式 */
+    .category-buttons button[data-selected="true"] {
+        background-color: #e6f3ff !important;
+        border-color: #2196f3 !important;
+        color: #2196f3 !important;
+    }
+
+    .article-container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .article-category {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+    }
+
+    .article-divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 10px 0;
+    }
+
+    .article-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #333;
+        margin: 10px 0;
+    }
+
+    .article-meta {
+        font-size: 0.8rem;
+        color: #999;
+        margin-bottom: 10px;
+    }
+
+    .article-content {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #555;
+    }
+
+    .article-container {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .article-category {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+
+    .article-divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 10px 0;
+    }
+
+    .article-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #333;
+        margin: 10px 0;
+    }
+
+    .article-meta {
+        font-size: 0.8rem;
+        color: #999;
+        margin-bottom: 10px;
+    }
+
+    .article-content {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #555;
+    }
+
+    .streamlit-expanderHeader {
+        font-size: 1.2rem !important;
+        font-weight: 600 !important;
+        color: #333 !important;
+    }
+
+    .streamlit-expanderHeader:hover {
+        color: #4CAF50 !important;
+    }
+
     </style>
+
+    <script>
+    // 为分类按钮添加选中效果
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const buttons = document.querySelectorAll('.category-buttons button');
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                buttons.forEach(b => b.setAttribute('data-selected', 'false'));
+                button.setAttribute('data-selected', 'true');
+            });
+        });
+    });
+    </script>
     """, unsafe_allow_html=True)
 
 def hash_password(password):
@@ -172,9 +677,6 @@ def hash_password(password):
 
 def check_password(password, hashed_password):
     return hash_password(password) == hashed_password
-
-def check_admin():
-    return st.session_state.get('is_admin', False)
 
 def load_data(file_path, default_data):
     if os.path.exists(file_path):
@@ -185,15 +687,6 @@ def load_data(file_path, default_data):
 def save_data(file_path, data):
     with open(file_path, 'w') as f:
         json.dump(data, f)
-
-def admin_login():
-    admin_password = st.sidebar.text_input("管理员密码", type="password")
-    if st.sidebar.button("管理员登录"):
-        if check_admin_password(admin_password):
-            st.session_state.admin = True
-            st.sidebar.success("管理员登录成功！")
-        else:
-            st.sidebar.error("管理员密码错误")
 
 def user_auth():
     login_tab, register_tab = st.tabs(["登录", "注册"])
@@ -233,6 +726,21 @@ def user_auth():
                     st.error("用户名已存在")
             else:
                 st.error("请填写用户名和密码")
+
+def check_admin_password(password):
+    return password == ADMIN_PASSWORD
+
+def admin_login():
+    admin_password = st.sidebar.text_input("管理员密码", type="password")
+    if st.sidebar.button("管理员登录"):
+        if check_admin_password(admin_password):
+            st.session_state.admin = True
+            st.sidebar.success("管理员登录成功！")
+        else:
+            st.sidebar.error("管理员密码错误")
+
+def check_admin():
+    return st.session_state.get('is_admin', False)
 
 def update_user_profile():
     users = load_data(USERS_FILE, {})
@@ -358,9 +866,8 @@ def get_unique_visitors(post_id):
     return 0
 
 def count_words(text):
-    # 使用正则表达式匹配中文字符、英文单词和数字
-    words = re.findall(r'\w+|[^\s\w]+', text)
-    return len(words)
+    # 计算所有字符的数量，包括中文字符、数字和标点符号
+    return len(text)
 
 def get_post_stats():
     posts = load_data(POSTS_FILE, [])
@@ -454,46 +961,29 @@ def create_heatmap(heatmap_data):
 
     return fig
 
-def login_user():
-    username = st.sidebar.text_input("用户名")
-    password = st.sidebar.text_input("密码", type="password")
-    if st.sidebar.button("登录"):
-        if check_login(username, password):
-            st.session_state.user = username
-            st.sidebar.success(f"欢迎回来，{username}！")
-        else:
-            st.sidebar.error("用户名或密码错误")
-
-def logout_user():
-    if st.sidebar.button("登出"):
-        st.session_state.user = None
-        st.session_state.admin = False
-        st.sidebar.info("您已成功登出")
-
-def admin_login():
-    admin_password = st.sidebar.text_input("管理员密码", type="password")
-    if st.sidebar.button("管理员登录"):
-        if check_admin_password(admin_password):
-            st.session_state.admin = True
-            st.sidebar.success("管理员登录成功！")
-        else:
-            st.sidebar.error("管理员密码错误")
-
-def check_admin_password(password):
-    # 这里应该使用更安全的方法来存储和验证密码
-    return password == "your_admin_password_here"
+def toggle_like(post_id, user):
+    posts = load_data(POSTS_FILE, [])
+    for post in posts:
+        if post['id'] == post_id:
+            if 'likes' not in post:
+                post['likes'] = []
+            if user in post['likes']:
+                post['likes'].remove(user)
+            else:
+                post['likes'].append(user)
+            break
+    save_data(POSTS_FILE, posts)
+    st.rerun()
 
 def main():
     st.set_page_config(layout="wide", page_title="博客统计")
+    set_custom_theme()
 
     # 初始化 session state
     if 'page' not in st.session_state:
         st.session_state.page = 'main'
-
-    # 加载数据
-    total_posts, total_words, heatmap_data = get_post_stats()
-    posts = load_data(POSTS_FILE, [])
-    sorted_posts = sorted(posts, key=lambda x: x.get('id', ''), reverse=True)
+    if 'show_auth' not in st.session_state:
+        st.session_state.show_auth = False
 
     # 侧边栏
     with st.sidebar:
@@ -502,106 +992,139 @@ def main():
         if st.button("回到主界面"):
             st.session_state.page = 'main'
         
-        category_filter = st.radio(
-            "选择专题",
-            ["全部", "影评", "日常", "观察"],
-            key="sidebar_category"
-        )
+        # 分类选择
+        categories = ["全部", "影评", "日常", "观察"]
+        st.markdown("""
+        <div class="category-selector">
+            <p>选择分类：</p>
+            <div class="category-buttons">
+        """, unsafe_allow_html=True)
+        
+        for category in categories:
+            if st.button(category, key=f"cat_{category}", help=f"查看{category}类文章"):
+                st.session_state.category_filter = category
+        
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
+        category_filter = st.session_state.get('category_filter', "全部")
 
         st.markdown("---")
         st.subheader("用户中心")
         if 'user' not in st.session_state or st.session_state.user is None:
-            login_user()
+            if st.button("登录/注册"):
+                st.session_state.show_auth = True
         else:
             st.write(f"当前用户: {st.session_state.user}")
-            logout_user()
+            if st.button("登出"):
+                st.session_state.user = None
+                st.session_state.admin = False
+                st.rerun()
 
-        st.markdown("---")
-        st.subheader("管理员登录")
         if not st.session_state.get('admin', False):
             admin_login()
-        else:
-            st.write("管理员已登录")
-            if st.button("新建文章"):
-                st.session_state.page = 'new_post'
 
-    # 主界面
+    # 显示登录/注册界面
+    if st.session_state.show_auth:
+        user_auth()
+
+    # 主界面内容
     if st.session_state.page == 'main':
         st.title("我的博客")
-
-        # 热图和统计信息
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.plotly_chart(create_heatmap(heatmap_data), use_container_width=True)
-        with col2:
-            st.markdown(f"""
-            <div class="stats-container">
-                <div class="stat-item">
-                    <div class="stat-value">{total_posts}</div>
-                    <div class="stat-label">博文数量</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">{total_words}</div>
-                    <div class="stat-label">累计字数</div>
-                </div>
+        
+        # 显示统计信息
+        total_posts, total_words, heatmap_data = get_post_stats()
+        st.markdown(f"""
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value">{total_posts}</div>
+                <div class="stat-label">总文章数</div>
             </div>
-            """, unsafe_allow_html=True)
+            <div class="stat-item">
+                <div class="stat-value">{total_words}</div>
+                <div class="stat-label">总字数</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 显示发文热图
+        st.subheader("发文记录")
+        fig = create_heatmap(heatmap_data)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # 添加新文章（仅管理员可见）
+        if st.session_state.get('admin', False):
+            add_new_post()
 
         # 文章列表
         st.header("最新文章")
+        posts = load_data(POSTS_FILE, [])
+        sorted_posts = sorted(posts, key=lambda x: x.get("upload_time", ""), reverse=True)
+        
         for post in sorted_posts:
             if category_filter == "全部" or post["category"] == category_filter:
-                with st.expander(f"{post['title']} - {post['category']}"):
+                with st.expander(f"{post['category']} | {post['title']}", expanded=False):
                     st.markdown(f"""
-                    <div class="blog-post">
-                        <p class="upload-time">发布时间：{post.get("upload_time", "未知")} | 字数：{count_words(post["content"])} 字</p>
-                        <p>{post["content"][:200]}...</p>
+                    <div class="article-container">
+                        <div class="article-category">{post['category']}</div>
+                        <div class="article-divider"></div>
+                        <h2 class="article-title">{html.escape(post['title'])}</h2>
+                        <div class="article-meta">
+                            <span class="upload-time">发布时间：{post.get("upload_time", "未知")}</span>
+                        </div>
+                        <div class="article-content">
+                            <p>{html.escape(post['content'])}</p>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
+                    
                     if post["image"]:
                         image = Image.open(BytesIO(base64.b64decode(post["image"])))
                         st.image(image, use_column_width=True)
                     
-                    # 显示评论
-                    st.write("评论:")
-                    for comment in post["comments"]:
-                        st.markdown(f"""
-                        <div class="comment">
-                            <span class="comment-author">{comment['author']}:</span> {comment['content']}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # 添加评论
-                    if st.session_state.get('user'):
-                        comment = st.text_input("添加评论", key=f"comment_{post['id']}")
-                        if st.button("发表评论", key=f"submit_comment_{post['id']}"):
-                            add_comment(post['id'], comment)
+                    # 点赞功能
+                    likes = post.get('likes', [])
+                    like_count = len(likes)
+                    current_user = st.session_state.get('user')
+                    if current_user:
+                        is_liked = current_user in likes
+                        if st.button(
+                            "👍 " + ("已赞" if is_liked else "点赞") + f" ({like_count})",
+                            key=f"like_{post['id']}",
+                            type="secondary" if not is_liked else "primary"
+                        ):
+                            toggle_like(post['id'], current_user)
                     else:
-                        st.info("请登录后发表评论")
+                        st.write(f"👍 {like_count} 人点赞")
 
-                    # 管理员功能：删除文章
-                    if st.session_state.get('admin', False):
-                        if st.button(f"删除文章", key=f"delete_{post['id']}"):
-                            delete_post(post['id'])
-                            st.success("文章已删除")
-                            st.experimental_rerun()
+    # 显示完整文章
+    if 'current_post' in st.session_state:
+        display_full_post(st.session_state.current_post)
 
-    # 新建文章页面
-    elif st.session_state.page == 'new_post':
-        st.subheader("新建文章")
-        new_title = st.text_input("标题")
-        new_category = st.selectbox("分类", ["影评", "日常", "观察"])
-        new_content = st.text_area("内容")
-        new_image = st.file_uploader("上传图片", type=["png", "jpg", "jpeg"])
-        if st.button("发布"):
-            if new_image:
-                image_bytes = new_image.getvalue()
-                image_b64 = base64.b64encode(image_bytes).decode()
-            else:
-                image_b64 = None
-            add_post(new_title, new_category, new_content, image_b64)
-            st.success("文章发布成功！")
-            st.session_state.page = 'main'
+# 添加这个新函数来显示完整文章
+def display_full_post(post_id):
+    posts = load_data(POSTS_FILE, [])
+    post = next((p for p in posts if p['id'] == post_id), None)
+    if post:
+        st.markdown(f"""
+        <div class="full-post">
+            <h2>{html.escape(post['title'])}</h2>
+            <div class="category-tag">{post['category']}</div>
+            <p class="upload-time">发布时间：{post.get("upload_time", "未知")} | 字数：{count_words(post["content"])} 字</p>
+            <p>{html.escape(post['content'])}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if post["image"]:
+            image = Image.open(BytesIO(base64.b64decode(post["image"])))
+            st.image(image, use_column_width=True)
+        
+        # 添加评论功能等其他需要的功能
+        
+        if st.button("返回文章列表"):
+            del st.session_state.current_post
+            st.rerun()
+    else:
+        st.error("文章不存在")
 
     # 添加自定义 CSS
     st.markdown("""
@@ -645,6 +1168,36 @@ def main():
     }
     .comment-author {
         font-weight: bold;
+    }
+    .stButton>button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .stButton>button[data-baseweb="button"] {
+        background-color: #E7F3FF;
+        color: #1877F2;
+        border: none;
+    }
+
+    .stButton>button[data-baseweb="button"]:hover {
+        background-color: #DBE7F2;
+    }
+
+    .stButton>button[kind="primary"] {
+        background-color: #1877F2;
+        color: white;
+    }
+
+    .stButton>button[kind="primary"]:hover {
+        background-color: #166FE5;
     }
     </style>
     """, unsafe_allow_html=True)
