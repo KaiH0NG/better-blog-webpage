@@ -1083,6 +1083,11 @@ def main():
                 else:
                     st.write(f"👍 {like_count} 人点赞")
 
+                # 添加删除按钮（仅管理员可见）
+                if st.session_state.get('admin'):
+                    if st.button("删除文章", key=f"delete_{post['id']}"):
+                        delete_post(post['id'])
+
     # 管理员功能
     if st.session_state.get('admin'):
         st.sidebar.header("管理员功能")
