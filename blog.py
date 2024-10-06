@@ -656,6 +656,24 @@ def set_custom_theme():
         color: #4CAF50 !important;
     }
 
+    .article-content {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #555;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    /* 适配移动设备 */
+    @media (max-width: 768px) {
+        .article-title {
+            font-size: 1.2rem;
+        }
+        .article-content {
+            font-size: 0.9rem;
+        }
+    }
+
     </style>
 
     <script>
@@ -975,229 +993,166 @@ def toggle_like(post_id, user):
     save_data(POSTS_FILE, posts)
     st.rerun()
 
+def is_mobile():
+    # 一个简单的方法来检测是否是移动设备
+    return st.session_state.get('mobile', False)
+
 def main():
-    st.set_page_config(layout="wide", page_title="博客统计")
     set_custom_theme()
 
-    # 初始化 session state
-    if 'page' not in st.session_state:
-        st.session_state.page = 'main'
-    if 'show_auth' not in st.session_state:
-        st.session_state.show_auth = False
+    # 检测是否是移动设备
+    if 'mobile' not in st.session_state:
+        st.session_state.mobile = st.checkbox("移动设备模式", value=False, key="mobile_mode")
+
+    st.title("我的博客")
 
     # 侧边栏
-    with st.sidebar:
-        st.title("博客导航")
-        
-        if st.button("回到主界面"):
-            st.session_state.page = 'main'
-        
-        # 分类选择
-        categories = ["全部", "影评", "日常", "观察"]
-        st.markdown("""
-        <div class="category-selector">
-            <p>选择分类：</p>
-            <div class="category-buttons">
-        """, unsafe_allow_html=True)
-        
-        for category in categories:
-            if st.button(category, key=f"cat_{category}", help=f"查看{category}类文章"):
-                st.session_state.category_filter = category
-        
-        st.markdown("</div></div>", unsafe_allow_html=True)
+    st.sidebar.title("用户操作")
 
-        category_filter = st.session_state.get('category_filter', "全部")
+    # 用户登录/注册
+    users = load_data(USERS_FILE, [])
+    if 'user' not in st.session_state:
+        username = st.sidebar.text_input("用户名")
+        password = st.sidebar.text_input("密码", type="password")
+        col1, col2 = st.sidebar.columns(2)
+        if col1.button("登录"):
+            user = next((u for u in users if u['username'] == username and u['password'] == password), None)
+            if user:
+                st.session_state.user = username
+                st.sidebar.success(f"欢迎回来，{username}！")
+            else:
+                st.sidebar.error("用户名或密码错误")
+        if col2.button("注册"):
+            if not any(u['username'] == username for u in users):
+                users.append({'username': username, 'password': password})
+                save_data(USERS_FILE, users)
+                st.session_state.user = username
+                st.sidebar.success(f"注册成功，欢迎 {username}！")
+            else:
+                st.sidebar.error("用户名已存在")
+    else:
+        st.sidebar.write(f"当前用户：{st.session_state.user}")
+        if st.sidebar.button("登出"):
+            del st.session_state.user
+            st.experimental_rerun()
 
-        st.markdown("---")
-        st.subheader("用户中心")
-        if 'user' not in st.session_state or st.session_state.user is None:
-            if st.button("登录/注册"):
-                st.session_state.show_auth = True
-        else:
-            st.write(f"当前用户: {st.session_state.user}")
-            if st.button("登出"):
-                st.session_state.user = None
-                st.session_state.admin = False
-                st.rerun()
+    # 管理员登录
+    if 'admin' not in st.session_state:
+        admin_login()
 
-        if not st.session_state.get('admin', False):
-            admin_login()
-
-    # 显示登录/注册界面
-    if st.session_state.show_auth:
-        user_auth()
-
-    # 主界面内容
-    if st.session_state.page == 'main':
-        st.title("我的博客")
-        
-        # 显示统计信息
-        total_posts, total_words, heatmap_data = get_post_stats()
-        st.markdown(f"""
-        <div class="stats-container">
-            <div class="stat-item">
-                <div class="stat-value">{total_posts}</div>
-                <div class="stat-label">总文章数</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">{total_words}</div>
-                <div class="stat-label">总字数</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # 显示发文热图
-        st.subheader("发文记录")
-        fig = create_heatmap(heatmap_data)
-        st.plotly_chart(fig, use_container_width=True)
-
-        # 添加新文章（仅管理员可见）
-        if st.session_state.get('admin', False):
-            add_new_post()
-
-        # 文章列表
-        st.header("最新文章")
-        posts = load_data(POSTS_FILE, [])
-        sorted_posts = sorted(posts, key=lambda x: x.get("upload_time", ""), reverse=True)
-        
-        for post in sorted_posts:
-            if category_filter == "全部" or post["category"] == category_filter:
-                with st.expander(f"{post['category']} | {post['title']}", expanded=False):
-                    st.markdown(f"""
-                    <div class="article-container">
-                        <div class="article-category">{post['category']}</div>
-                        <div class="article-divider"></div>
-                        <h2 class="article-title">{html.escape(post['title'])}</h2>
-                        <div class="article-meta">
-                            <span class="upload-time">发布时间：{post.get("upload_time", "未知")}</span>
-                        </div>
-                        <div class="article-content">
-                            <p>{html.escape(post['content'])}</p>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if post["image"]:
+    # 文章列表
+    st.header("最新文章")
+    posts = load_data(POSTS_FILE, [])
+    sorted_posts = sorted(posts, key=lambda x: x.get("upload_time", ""), reverse=True)
+    
+    # 分类筛选
+    categories = ["全部"] + list(set(post["category"] for post in posts))
+    category_filter = st.selectbox("选择分类", categories)
+    
+    for post in sorted_posts:
+        if category_filter == "全部" or post["category"] == category_filter:
+            with st.expander(f"{post['category']} | {post['title']}", expanded=False):
+                st.markdown(f"**分类：** {post['category']}")
+                st.markdown(f"**标题：** {post['title']}")
+                st.markdown(f"**发布时间：** {post.get('upload_time', '未知')} | **字数：** {count_words(post['content'])} 字")
+                
+                st.write(post['content'])
+                
+                if post["image"]:
+                    try:
                         image = Image.open(BytesIO(base64.b64decode(post["image"])))
                         st.image(image, use_column_width=True)
-                    
-                    # 点赞功能
-                    likes = post.get('likes', [])
-                    like_count = len(likes)
-                    current_user = st.session_state.get('user')
-                    if current_user:
-                        is_liked = current_user in likes
-                        if st.button(
-                            "👍 " + ("已赞" if is_liked else "点赞") + f" ({like_count})",
-                            key=f"like_{post['id']}",
-                            type="secondary" if not is_liked else "primary"
-                        ):
-                            toggle_like(post['id'], current_user)
-                    else:
-                        st.write(f"👍 {like_count} 人点赞")
+                    except Exception as e:
+                        st.error(f"无法加载图片: {str(e)}")
+                
+                # 点赞功能
+                likes = post.get('likes', [])
+                like_count = len(likes)
+                current_user = st.session_state.get('user')
+                if current_user:
+                    is_liked = current_user in likes
+                    if st.button(
+                        "👍 " + ("已赞" if is_liked else "点赞") + f" ({like_count})",
+                        key=f"like_{post['id']}",
+                        type="secondary" if not is_liked else "primary"
+                    ):
+                        toggle_like(post['id'], current_user)
+                else:
+                    st.write(f"👍 {like_count} 人点赞")
 
-    # 显示完整文章
-    if 'current_post' in st.session_state:
-        display_full_post(st.session_state.current_post)
+    # 管理员功能
+    if st.session_state.get('admin'):
+        st.sidebar.header("管理员功能")
+        if st.sidebar.button("新建文章"):
+            st.session_state.new_post = True
 
-# 添加这个新函数来显示完整文章
-def display_full_post(post_id):
-    posts = load_data(POSTS_FILE, [])
-    post = next((p for p in posts if p['id'] == post_id), None)
-    if post:
-        st.markdown(f"""
-        <div class="full-post">
-            <h2>{html.escape(post['title'])}</h2>
-            <div class="category-tag">{post['category']}</div>
-            <p class="upload-time">发布时间：{post.get("upload_time", "未知")} | 字数：{count_words(post["content"])} 字</p>
-            <p>{html.escape(post['content'])}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        if post["image"]:
-            image = Image.open(BytesIO(base64.b64decode(post["image"])))
-            st.image(image, use_column_width=True)
-        
-        # 添加评论功能等其他需要的功能
-        
-        if st.button("返回文章列表"):
-            del st.session_state.current_post
-            st.rerun()
-    else:
-        st.error("文章不存在")
+        if st.session_state.get('new_post'):
+            st.header("新建文章")
+            title = st.text_input("标题")
+            category = st.text_input("分类")
+            content = st.text_area("内容")
+            image = st.file_uploader("上传图片", type=["png", "jpg", "jpeg"])
+            if st.button("发布"):
+                if title and category and content:
+                    new_post = {
+                        "id": len(posts) + 1,
+                        "title": title,
+                        "category": category,
+                        "content": content,
+                        "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "image": base64.b64encode(image.getvalue()).decode("utf-8") if image else None
+                    }
+                    posts.append(new_post)
+                    save_data(POSTS_FILE, posts)
+                    st.success("文章发布成功！")
+                    st.session_state.new_post = False
+                    st.experimental_rerun()
+                else:
+                    st.error("请填写所有必填字段")
 
-    # 添加自定义 CSS
+def set_custom_theme():
     st.markdown("""
     <style>
-    .stats-container {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 16px;
-    }
-    .stat-item {
-        background-color: white;
-        border: 1px solid #e1e4e8;
-        border-radius: 6px;
-        padding: 16px;
-        flex: 1;
-        margin-right: 16px;
-        text-align: center;
-    }
-    .stat-item:last-child {
-        margin-right: 0;
-    }
-    .stat-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #24292e;
-    }
-    .stat-label {
-        font-size: 14px;
-        color: #586069;
-        margin-top: 4px;
-    }
-    .blog-post {
-        margin-bottom: 20px;
-    }
-    .upload-time {
-        color: #586069;
-        font-size: 12px;
-    }
-    .comment {
-        margin-bottom: 10px;
-    }
-    .comment-author {
-        font-weight: bold;
-    }
-    .stButton>button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+        background-color: #f7f7f7;
+        color: #333;
     }
 
-    .stButton>button[data-baseweb="button"] {
-        background-color: #E7F3FF;
-        color: #1877F2;
-        border: none;
+    .stApp {
+        max-width: 100%;
     }
 
-    .stButton>button[data-baseweb="button"]:hover {
-        background-color: #DBE7F2;
+    .stSidebar {
+        background-color: #f0f0f0;
+        padding: 1rem;
     }
 
-    .stButton>button[kind="primary"] {
-        background-color: #1877F2;
+    .stButton > button {
+        background-color: #4CAF50;
         color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
     }
 
-    .stButton>button[kind="primary"]:hover {
-        background-color: #166FE5;
+    .stButton > button:hover {
+        background-color: #45a049;
+    }
+
+    /* 适配移动设备 */
+    @media (max-width: 768px) {
+        .stApp {
+            font-size: 14px;
+        }
+        .streamlit-expanderHeader {
+            font-size: 16px !important;
+        }
+        .stSidebar {
+            padding: 0.5rem;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
