@@ -15,6 +15,7 @@ import numpy as np
 import re
 import html
 import streamlit.components.v1 as components
+import textwrap
 
 # 文件路径
 POSTS_FILE = "posts.json"
@@ -677,6 +678,14 @@ def set_custom_theme():
         }
     }
 
+    .article-content {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #333;
+    }
+
     </style>
 
     <script>
@@ -1059,7 +1068,9 @@ def main():
                 st.markdown(f"**标题：** {post['title']}")
                 st.markdown(f"**发布时间：** {post.get('upload_time', '未知')} | **字数：** {count_words(post['content'])} 字")
                 
-                st.write(post['content'])
+                # 使用textwrap处理文章内容
+                wrapped_content = textwrap.fill(post['content'], width=80)
+                st.markdown(f'<div class="article-content">{wrapped_content}</div>', unsafe_allow_html=True)
                 
                 if post["image"]:
                     try:
