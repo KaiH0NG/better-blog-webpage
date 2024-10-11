@@ -686,6 +686,12 @@ def set_custom_theme():
         color: #333;
     }
 
+    .article-content {
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
     </style>
 
     <script>
