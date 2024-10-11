@@ -701,6 +701,28 @@ def set_custom_theme():
         }
     }
 
+    .article-content {
+        line-height: 1.6;
+        word-wrap: break-word;
+    }
+
+    .article-content p {
+        margin-bottom: 1em;  /* 增加段落之间的间距 */
+    }
+
+    /* 移动端样式 */
+    @media (max-width: 768px) {
+        .article-content {
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5em;  /* 在移动端增加更多的段落间距 */
+        }
+    }
+
     </style>
 
     <script>
@@ -1030,9 +1052,9 @@ def format_content_for_desktop(content):
     return '<br><br>'.join(formatted_paragraphs)
 
 def format_content_for_mobile(content):
-    # 移动端不进行额外的换行处理，保持原有的段落结构
+    # 使用 <p> 标签包裹每个段落，以确保在移动端有明显的分段
     paragraphs = content.split('\n\n')
-    return '<br><br>'.join([p.strip() for p in paragraphs])
+    return ''.join([f'<p>{p.strip()}</p>' for p in paragraphs])
 
 def main():
     set_custom_theme()
