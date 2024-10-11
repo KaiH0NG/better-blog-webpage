@@ -692,6 +692,15 @@ def set_custom_theme():
         word-wrap: break-word;
     }
 
+    /* 移动端样式 */
+    @media (max-width: 768px) {
+        .article-content {
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+    }
+
     </style>
 
     <script>
@@ -1015,12 +1024,22 @@ def is_mobile():
     # 一个简单的方法来检测是否是移动设备
     return st.session_state.get('mobile', False)
 
+def format_content_for_desktop(content):
+    paragraphs = content.split('\n\n')
+    formatted_paragraphs = [textwrap.fill(p.strip(), width=80) for p in paragraphs]
+    return '<br><br>'.join(formatted_paragraphs)
+
+def format_content_for_mobile(content):
+    # 移动端不进行额外的换行处理，保持原有的段落结构
+    paragraphs = content.split('\n\n')
+    return '<br><br>'.join([p.strip() for p in paragraphs])
+
 def main():
     set_custom_theme()
 
     # 检测是否是移动设备
     if 'mobile' not in st.session_state:
-        st.session_state.mobile = st.checkbox("移动设备模式", value=False, key="mobile_mode")
+        st.session_state.mobile = st.sidebar.checkbox("移动设备模式", value=False, key="mobile_mode")
 
     st.title("我的博客")
 
@@ -1074,9 +1093,12 @@ def main():
                 st.markdown(f"**标题：** {post['title']}")
                 st.markdown(f"**发布时间：** {post.get('upload_time', '未知')} | **字数：** {count_words(post['content'])} 字")
                 
-                # 处理文章内容，保留段落
-                paragraphs = post['content'].split('\n\n')
-                formatted_content = '<br><br>'.join([textwrap.fill(p.strip(), width=80) for p in paragraphs])
+                # 根据设备模式处理文章内容
+                if st.session_state.mobile:
+                    formatted_content = format_content_for_mobile(post['content'])
+                else:
+                    formatted_content = format_content_for_desktop(post['content'])
+                
                 st.markdown(f'<div class="article-content">{formatted_content}</div>', unsafe_allow_html=True)
                 
                 if post["image"]:
