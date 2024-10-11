@@ -1069,13 +1069,13 @@ def is_mobile():
     return st.session_state.get('mobile', False)
 
 def format_content_for_desktop(content):
-    paragraphs = content.split('\n\n')
-    formatted_paragraphs = [textwrap.fill(p.strip(), width=80) for p in paragraphs]
-    return '<br><br>'.join(formatted_paragraphs)
+    # 使用 HTML 的 <p> 标签来保持段落结构
+    paragraphs = content.split('\n')
+    return ''.join([f'<p>{html.escape(p.strip())}</p>' for p in paragraphs if p.strip()])
 
 def format_content_for_mobile(content):
-    paragraphs = content.split('\n\n')
-    return ''.join([f'<p>{html.escape(p.strip())}</p>' for p in paragraphs])
+    # 移动端的处理方式与桌面端相同
+    return format_content_for_desktop(content)
 
 def main():
     set_custom_theme()
@@ -1136,11 +1136,8 @@ def main():
                 st.markdown(f"**标题：** {post['title']}")
                 st.markdown(f"**发布时间：** {post.get('upload_time', '未知')} | **字数：** {count_words(post['content'])} 字")
                 
-                # 根据设备模式处理文章内容
-                if st.session_state.mobile:
-                    formatted_content = format_content_for_mobile(post['content'])
-                else:
-                    formatted_content = format_content_for_desktop(post['content'])
+                # 格式化文章内容
+                formatted_content = format_content_for_desktop(post['content'])
                 
                 st.markdown(f'<div class="article-content">{formatted_content}</div>', unsafe_allow_html=True)
                 
@@ -1185,13 +1182,12 @@ def main():
             image = st.file_uploader("上传图片", type=["png", "jpg", "jpeg"])
             if st.button("发布"):
                 if title and category and content:
-                    # 确保内容中的段落被正确保存
-                    formatted_content = '\n\n'.join([p.strip() for p in content.split('\n\n')])
+                    # 保存原始内容，不进行任何处理
                     new_post = {
-                        "id": str(uuid.uuid4()),  # 使用UUID作为唯一标识符
+                        "id": str(uuid.uuid4()),
                         "title": title,
                         "category": category,
-                        "content": formatted_content,
+                        "content": content,  # 直接保存原始内容
                         "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "image": base64.b64encode(image.getvalue()).decode("utf-8") if image else None
                     }
