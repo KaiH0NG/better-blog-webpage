@@ -1068,9 +1068,10 @@ def main():
                 st.markdown(f"**标题：** {post['title']}")
                 st.markdown(f"**发布时间：** {post.get('upload_time', '未知')} | **字数：** {count_words(post['content'])} 字")
                 
-                # 使用textwrap处理文章内容
-                wrapped_content = textwrap.fill(post['content'], width=80)
-                st.markdown(f'<div class="article-content">{wrapped_content}</div>', unsafe_allow_html=True)
+                # 处理文章内容，保留段落
+                paragraphs = post['content'].split('\n\n')
+                formatted_content = '<br><br>'.join([textwrap.fill(p.strip(), width=80) for p in paragraphs])
+                st.markdown(f'<div class="article-content">{formatted_content}</div>', unsafe_allow_html=True)
                 
                 if post["image"]:
                     try:
