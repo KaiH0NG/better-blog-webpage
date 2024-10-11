@@ -723,6 +723,28 @@ def set_custom_theme():
         }
     }
 
+    .article-content {
+        line-height: 1.6;
+        word-wrap: break-word;
+    }
+
+    .article-content p {
+        margin-bottom: 1em;  /* 增加段落之间的间距 */
+    }
+
+    /* 移动端样式 */
+    @media (max-width: 768px) {
+        .article-content {
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5em;  /* 在移动端增加更多的段落间距 */
+        }
+    }
+
     </style>
 
     <script>
@@ -1052,9 +1074,8 @@ def format_content_for_desktop(content):
     return '<br><br>'.join(formatted_paragraphs)
 
 def format_content_for_mobile(content):
-    # 使用 <p> 标签包裹每个段落，以确保在移动端有明显的分段
     paragraphs = content.split('\n\n')
-    return ''.join([f'<p>{p.strip()}</p>' for p in paragraphs])
+    return ''.join([f'<p>{html.escape(p.strip())}</p>' for p in paragraphs])
 
 def main():
     set_custom_theme()
@@ -1160,15 +1181,17 @@ def main():
             st.header("新建文章")
             title = st.text_input("标题")
             category = st.selectbox("分类", CATEGORIES[1:])  # 排除"全部"选项
-            content = st.text_area("内容")
+            content = st.text_area("内容", height=300)  # 增加文本区域的高度
             image = st.file_uploader("上传图片", type=["png", "jpg", "jpeg"])
             if st.button("发布"):
                 if title and category and content:
+                    # 确保内容中的段落被正确保存
+                    formatted_content = '\n\n'.join([p.strip() for p in content.split('\n\n')])
                     new_post = {
-                        "id": len(posts) + 1,
+                        "id": str(uuid.uuid4()),  # 使用UUID作为唯一标识符
                         "title": title,
                         "category": category,
-                        "content": content,
+                        "content": formatted_content,
                         "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "image": base64.b64encode(image.getvalue()).decode("utf-8") if image else None
                     }
